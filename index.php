@@ -10,13 +10,16 @@ try {
 	die();
 }
 
-$blocks = $info['blocks'];
+// Litecoin settings
 $blockStartingReward = 50;
 $blockHalvingSubsidy = 840000;
+$blockTargetSpacing = 2.5;
 $maxCoins = 84000000;
+
+$blocks = $info['blocks'];
 $coins = CalculateTotalCoins($blockStartingReward, $blocks, $blockHalvingSubsidy);
 $blocksRemaining = CalculateRemainingBlocks($blocks, $blockHalvingSubsidy);
-$blocksPerDay = (60 / 2.5) * 24;
+$blocksPerDay = (60 / $blockTargetSpacing) * 24;
 $blockHalvingEstimation = number_format($blocksRemaining / $blocksPerDay);
 $blockString = '+' . $blockHalvingEstimation . ' day';
 $blockReward = CalculateRewardPerBlock($blockStartingReward, $blocks, $blockHalvingSubsidy);
