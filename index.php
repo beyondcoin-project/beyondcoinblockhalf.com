@@ -79,10 +79,10 @@ function CalculateTotalCoins($blockReward, $blocks, $subsidy) {
 </head>
 <body>
 	<div class="container">
-		<div class="page-header" align="center">
+		<div class="page-header" style="text-align:center">
 			<h3>Litecoin Block Reward Halving Countdown</h3>
 		</div>
-		<div class="flip-counter clock" style="margin-left:230px"></div>
+		<div class="flip-counter clock" style="display: flex; align-items: center; justify-content: center;"></div>
 		<script type="text/javascript">
 			var clock;
 
@@ -93,7 +93,7 @@ function CalculateTotalCoins($blockReward, $blocks, $subsidy) {
 				});
 			});
 		</script>
-		<div align="center">
+		<div style="text-align:center">
 			Reward-Drop ETA date: <strong><?=date('m-d-Y H:i:s', strtotime($blockString, time()))?></strong><br/><br/>
 			<p>Litecoin's block mining reward halves every 840,000 blocks, the coin reward will decrease from <?=$blockReward?> to <?=$blockReward / 2 ?> coins. You can watch an educational video by the <a href="http://litecoinassociation.org/">Litecoin Association</a> explaining it in more detail below:</p>
 			<iframe width="560" height="315" align="center" src="https://www.youtube.com/embed/BPxq8CgMooI" frameborder="0" allowfullscreen></iframe>
@@ -111,7 +111,7 @@ function CalculateTotalCoins($blockReward, $blocks, $subsidy) {
 			<tr><td><b>Difficulty:</b></td><td align = "right"><?=number_format($info['difficulty']);?></td></tr>
 			<tr><td><b>Hash rate:</b></td><td align = "right"><?=number_format($litecoin->getnetworkhashps() / 1000 / 1000 / 1000) . 'GH/s';?></td></tr>
 		</table>
-		<div align="center">
+		<div style="text-align:center">
 			<img src="../images/litecoin.png" width="100px"; height="100px">
 		</div>
 	</div>
