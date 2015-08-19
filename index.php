@@ -48,7 +48,7 @@ function CalculateRewardPerBlock($blockReward, $blocks, $subsidy) {
 function CalculateTotalCoins($blockReward, $blocks, $subsidy) {
 	$halvings = GetHalvings($blocks, $subsidy);
 	if ($halvings == 0) {
-		return $blocks * 50;
+		return $blocks * $blockReward;
 	} else {
 		$coins = 0;
 		for ($i = 0; $i < $halvings; $i++) {
@@ -95,7 +95,7 @@ function CalculateTotalCoins($blockReward, $blocks, $subsidy) {
 		</script>
 		<div style="text-align:center">
 			Reward-Drop ETA date: <strong><?=date('m-d-Y H:i:s', strtotime($blockString, time()))?></strong><br/><br/>
-			<p>Litecoin's block mining reward halves every 840,000 blocks, the coin reward will decrease from <?=$blockReward?> to <?=$blockReward / 2 ?> coins. You can watch an educational video by the <a href="http://litecoinassociation.org/">Litecoin Association</a> explaining it in more detail below:</p>
+			<p>Litecoin's block mining reward halves every <?=number_format($blockHalvingSubsidy)?> blocks, the coin reward will decrease from <?=$blockReward?> to <?=$blockReward / 2 ?> coins. You can watch an educational video by the <a href="http://litecoinassociation.org/">Litecoin Association</a> explaining it in more detail below:</p>
 			<iframe width="560" height="315" align="center" src="https://www.youtube.com/embed/BPxq8CgMooI" frameborder="0" allowfullscreen></iframe>
 			<br/><br/>
 		</div>
