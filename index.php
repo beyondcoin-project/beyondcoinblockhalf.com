@@ -105,7 +105,7 @@ function CalculateTotalCoins($blockReward, $blocks, $subsidy) {
 			<tr><td><b>Percentage of total Litecoins mined:</b></td><td align = "right"><?=number_format($coins / $maxCoins * 100 / 1, 2)?>%</td></tr>
 			<tr><td><b>Total Blocks:</b></td><td align = "right"><?=number_format($blocks);?></td></tr>
 			<tr><td><b>Blocks until mining reward is halved:</b></td><td align = "right"><?=number_format($blocksRemaining);?></td></tr>
-			<tr><td><b>Block generation time:</b></td><td align = "right">2.5 minutes</td></tr>
+			<tr><td><b>Block generation time:</b></td><td align = "right"><?=$blockTargetSpacing?> minutes</td></tr>
 			<tr><td><b>Blocks generated per day:</b></td><td align = "right"><?=$blocksPerDay;?></td></tr>
 			<tr><td><b>Litecoins generated per day:</b></td><td align = "right"><?=number_format($blocksPerDay * $blockReward);?></td></tr>
 			<tr><td><b>Difficulty:</b></td><td align = "right"><?=number_format($info['difficulty']);?></td></tr>
