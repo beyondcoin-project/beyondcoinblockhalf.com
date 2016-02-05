@@ -28,7 +28,14 @@ $nextHalvingHeight = $blocks + $blocksRemaining;
 $inflationRate = CalculateInflationRate($coins, $blockReward, $blocksPerDay);
 $inflationRateNextHalving = CalculateInflationRate(CalculateTotalCoins($blockStartingReward, $nextHalvingHeight, $blockHalvingSubsidy), 
 	CalculateRewardPerBlock($blockStartingReward, $nextHalvingHeight, $blockHalvingSubsidy), $blocksPerDay);
-$price = 2.92; // change to dynamic way of getting price
+$price = GetPrice(); // change to dynamic way of getting price
+
+function GetPrice() {
+	$file = fopen("price.txt", "r") or die("Unable to open file!");
+	$result = fread($file,filesize("price.txt"));
+	fclose($file);
+	return $result;
+}
 
 function GetHalvings($blocks, $subsidy) {
 	return (int)($blocks / $subsidy);
@@ -112,11 +119,11 @@ function CalculateInflationRate($totalCoins, $blockReward, $blocksPerDay) {
 		<table class="table table-striped">
 			<tr><td><b>Total Litecoins in circulation:</b></td><td align = "right"><?=number_format($coins)?></td></tr>
 			<tr><td><b>Total Litecoins to ever be produced:</b></td><td align = "right"><?=number_format($maxCoins)?></td></tr>
-			<tr><td><b>Percentage of total Litecoins mined:</b></td><td align = "right"><?=number_format($coins / $maxCoins * 100 / 1, 4)?>%</td></tr>
-			<tr><td><b>Total Litecoins left to mine until next blockhalf:</b></td><td align = "right"><?=number_format($coinsRemaining);?></td></tr>
+			<tr><td><b>Percentage of total Litecoins mined:</b></td><td align = "right"><?=number_format($coins / $maxCoins * 100 / 1, 2)?>%</td></tr>
+			<tr><td><b>Total Litecoins left to mine until next blockhalf:</b></td><td align = "right"><?= number_format($coinsRemaining);?></td></tr>
 			<tr><td><b>Litecoin price (USD):</b></td><td align = "right">$<?=number_format($price, 2);?></td></tr>
-			<tr><td><b>Market capitilsation (USD):</b></td><td align = "right">$<?=number_format($coins * $price, 2);?></td></tr>
-			<tr><td><b>Approximate Litecoins generated per day:</b></td><td align = "right"><?=number_format($blocksPerDay * $blockReward);?></td></tr>	
+			<tr><td><b>Market capitilzation (USD):</b></td><td align = "right">$<?=number_format($coins * $price, 2);?></td></tr>
+			<tr><td><b>Litecoins generated per day:</b></td><td align = "right"><?=number_format($blocksPerDay * $blockReward);?></td></tr>	
 			<tr><td><b>Litecoin inflation rate per annum:</b></td><td align = "right"><?=number_format($inflationRate * 100 / 1, 2);?>%</td></tr>
 			<tr><td><b>Litecoin inflation rate per annum at next block halving event:</b></td><td align = "right"><?=number_format($inflationRateNextHalving * 100 / 1, 2);?>%</td></tr>
 			<tr><td><b>Litecoin inflation per day (USD):</b></td><td align = "right">$<?=number_format($blocksPerDay * $blockReward * $price);?></td></tr>
