@@ -120,6 +120,7 @@ function CalculateInflationRate($totalCoins, $blockReward, $blocksPerDay) {
 			<tr><td><b>Total Litecoins in circulation:</b></td><td align = "right"><?=number_format($coins)?></td></tr>
 			<tr><td><b>Total Litecoins to ever be produced:</b></td><td align = "right"><?=number_format($maxCoins)?></td></tr>
 			<tr><td><b>Percentage of total Litecoins mined:</b></td><td align = "right"><?=number_format($coins / $maxCoins * 100 / 1, 2)?>%</td></tr>
+			<tr><td><b>Total Litecoins left to mine:</b></td><td align = "right"><?=number_format($maxCoins - $coins)?></td></tr>
 			<tr><td><b>Total Litecoins left to mine until next blockhalf:</b></td><td align = "right"><?= number_format($coinsRemaining);?></td></tr>
 			<tr><td><b>Litecoin price (USD):</b></td><td align = "right">$<?=number_format($price, 2);?></td></tr>
 			<tr><td><b>Market capitilzation (USD):</b></td><td align = "right">$<?=number_format($coins * $price, 2);?></td></tr>
