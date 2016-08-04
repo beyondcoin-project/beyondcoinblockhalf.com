@@ -1,7 +1,7 @@
 <?php
-$data = file_get_contents('https://api.bitfinex.com/v1/pubticker/LTCUSD');
+$data = file_get_contents('https://apiv2.bitcoinaverage.com/indices/global/ticker/LTCUSD');
 $price = json_decode($data, true);
-$ltcPrice = (float)$price["last_price"];
+$ltcPrice = (float)$price["last"];
 
 if ($price <= 1.0) {
 	die(); 
