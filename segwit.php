@@ -3,7 +3,8 @@ include_once("analyticstracking.php");
 require_once 'jsonRPCClient.php';
 
 define("BIP9_TOPBITS_VERSION", 0x20000000);
-define("TARGET_BLOCK_VERSION", 0x20000003);
+define("CSV_SEGWIT_BLOCK_VERSION", 0x20000003);
+define("SEGWIT_BLOCK_VERSION", 0x20000002);
 define("BLOCK_TARGET",  8064);
 define("SEGWIT_SIGNAL_START", 1145088);
 define("BLOCK_RETARGET_INTERVAL", 2016);
@@ -33,7 +34,7 @@ $nextRetargetBlock = GetNextRetarget($blockCount) * BLOCK_RETARGET_INTERVAL;
 $blockETA = ($nextRetargetBlock - $blockCount) / $blocksPerDay * 24 * 60 * 60;
 
 if (!$versions)
-	$versions = array(BIP9_TOPBITS_VERSION, TARGET_BLOCK_VERSION);
+	$versions = array(BIP9_TOPBITS_VERSION, CSV_SEGWIT_BLOCK_VERSION, SEGWIT_BLOCK_VERSION);
 
 $verbose = false;
 
@@ -86,7 +87,7 @@ if ($blockHeight) {
 if ($verbose)
 	GetBlockRangeSummary($versions, $mem);
 
-$segwitBlocks = GetBlockVersionCounter(TARGET_BLOCK_VERSION, $mem);
+$segwitBlocks = GetBlockVersionCounter(CSV_SEGWIT_BLOCK_VERSION, $mem) + GetBlockVersionCounter(SEGWIT_BLOCK_VERSION, $mem);
 $bip9Blocks = GetBlockVersionCounter(BIP9_TOPBITS_VERSION, $mem);
 
 $segwitSignalling = ($blockcount >= SEGWIT_SIGNAL_START) ? true : false;
@@ -249,7 +250,13 @@ function GetBlockVersionCounter($blockVer, $memcache) {
 	 </table>
     </div>
     <div align="center">
-    	<img src="../images/litecoin.png" width="100px"; height="100px">
+    	<img src="../images/logo.png" with="200px", height="150px">&nbsp;
+    	<img src="../images/litecoin.png" width="125px" height="125px">
 	</div>
+	<footer>
+		<div class="container" align="center">
+			Segwit logo designed by <a href="https://twitter.com/albertdrosphoto" rel="external" target="_blank">@albertdrosphoto</a>
+		</div>
+	</footer>
 </body>
 </html>
