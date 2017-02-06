@@ -42,7 +42,6 @@ if ($blocksSincePeriodStart == 0) {
 
 $blockHeight = $mem->get("blockheight");
 $versions = $mem->get("versions");
-$period = $mem->get("period");
 
 if (!$versions)
 	$versions = array(BIP9_TOPBITS_VERSION, CSV_SEGWIT_BLOCK_VERSION, SEGWIT_BLOCK_VERSION);
@@ -80,6 +79,7 @@ if ($verbose)
 	GetBlockRangeSummary($versions, $mem);
 
 $segwitBlocks = GetBlockVersionCounter(CSV_SEGWIT_BLOCK_VERSION, $mem) + GetBlockVersionCounter(SEGWIT_BLOCK_VERSION, $mem);
+$segwitPercentage = number_format($segwitBlocks / $blocksSincePeriodStart * 100 / 1, 2);
 $bip9Blocks = GetBIP9Support($versions, $mem);
 
 $segwitSignalling = ($blockCount >= SEGWIT_SIGNAL_START) ? true : false;
@@ -219,17 +219,27 @@ function GetBlockVersionCounter($blockVer, $memcache) {
 	<link rel="stylesheet" href="css/flipclock.css">
 	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
 	<script src="js/flipclock.js"></script>	
+	<style type="text/css">
+		.progress {height: 50px; margin-bottom: 0px; margin-top: 30px; }
+	</style>
 </head>
 <body>
 	<div class="container">
 		<div class="page-header" align="center">
 			<h1>Is Segregated Witness Active? <b><?=$segwitActive ? "Yes!" : "No";?></b></h1>
 		</div>
-		<div align="center">
+		<div align="center" style>
 			<img src="../images/logo.png" with="200px", height="150px">&nbsp;
 			<img src="../images/litecoin.png" width="125px" height="125px">
+			<div class="progress">
+				<div class="progress-bar progress-bar-info progress-bar-striped active" role="progressbar" aria-valuenow="<?=$segwitPercentage?>" aria-valuemin="0" aria-valuemax="100" style="width:<?=$segwitPercentage?>%"></div>
+			</div>
+			<b>
+				<?php
+				echo $segwitBlocks . ' out of ' . (BLOCK_SIGNAL_INTERVAL * .75) . ' blocks achieved!';
+				?>
+			</b>
 		</div>
-		<br/>
 		<?php
 		if (!$segwitSignalling)
 		{ 	
@@ -248,7 +258,7 @@ function GetBlockVersionCounter($blockVer, $memcache) {
 			<?php 
 		}
 		?>
-		<table class="table table-striped">
+		<table class="table table-striped" style="margin-top: 30px">
 			<tr><td><b>Activation period #<?=$activationPeriod;?> block range <?="(". BLOCK_SIGNAL_INTERVAL . ")"?></b></td><td align = "right"><?=$signalPeriodStart . " - " . $nextSignalPeriodBlock;?></td></tr>
 			<tr><td><b>Current block height</b></td><td align = "right"><?=$blockCount;?></td></tr>
 			<tr><td><b>Blocks mined since period start</b></td><td align = "right"><?=$blocksSincePeriodStart?></td></tr>
@@ -260,7 +270,7 @@ function GetBlockVersionCounter($blockVer, $memcache) {
 			<tr><td><b>BIP9 miner support since activation period start</b></td><td align = "right"><?=$bip9Blocks . " (" .number_format(($bip9Blocks / $blocksSincePeriodStart * 100 / 1), 2) . "%)"; ?></td></tr>
 			<tr><td><b>Segwit status </b></td><td align = "right"><?=$segwitStatus;?></td></tr>
 			<tr><td><b>Segwit activation threshold </b></td><td align = "right">75%</td></tr>
-			<tr><td><b>Segwit miner support</b></td><td align = "right"><?=$segwitBlocks . " (" .number_format(($segwitBlocks / $blocksSincePeriodStart * 100 / 1), 2) . "%)"; ?></td></tr>
+			<tr><td><b>Segwit miner support</b></td><td align = "right"><?=$segwitBlocks . " (" . $segwitPercentage . "%)"; ?></td></tr>
 			<tr><td><b>Segwit start time </b></td><td align = "right"><?=FormatDate($segwitInfo["startTime"]);?></td></tr>
 			<tr><td><b>Segwit timeout time</b></td><td align = "right"><?=FormatDate($segwitInfo["timeout"]);?></td></tr>
 		</table>
