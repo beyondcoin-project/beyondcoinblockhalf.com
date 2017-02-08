@@ -4,6 +4,7 @@ require_once 'jsonRPCClient.php';
 
 define("BIP9_TOPBITS_VERSION", 0x20000000);
 define("CSV_SEGWIT_BLOCK_VERSION", 0x20000003);
+define("CSV_BLOCK_VERSION", 0x20000001);
 define("SEGWIT_BLOCK_VERSION", 0x20000002);
 define("BLOCK_SIGNAL_INTERVAL",  8064);
 define("SEGWIT_SIGNAL_START", 1145088);
@@ -81,6 +82,7 @@ if ($verbose)
 $segwitBlocks = GetBlockVersionCounter(CSV_SEGWIT_BLOCK_VERSION, $mem) + GetBlockVersionCounter(SEGWIT_BLOCK_VERSION, $mem);
 $segwitPercentage = number_format($segwitBlocks / $blocksSincePeriodStart * 100 / 1, 2);
 $bip9Blocks = GetBIP9Support($versions, $mem);
+$csvBlocks = GetCSVSupport($versions, $mem);
 
 $segwitSignalling = ($blockCount >= SEGWIT_SIGNAL_START) ? true : false;
 $segwitStatus = $segwitInfo["status"];
@@ -137,6 +139,16 @@ function GetBIP9Support($versions, $memcache) {
 	$totalBlocks = 0;
 	foreach ($versions as $version) {
 		if ($version >= 536870912) {
+			$totalBlocks += GetBlockVersionCounter($version, $memcache);
+		}
+	}
+	return $totalBlocks;
+}
+
+function GetCSVSupport($versions, $memcache) {
+	$totalBlocks = 0;
+	foreach ($versions as $version) {
+		if ($version == CSV_BLOCK_VERSION || $version == CSV_SEGWIT_BLOCK_VERSION) {
 			$totalBlocks += GetBlockVersionCounter($version, $memcache);
 		}
 	}
@@ -221,6 +233,7 @@ function GetBlockVersionCounter($blockVer, $memcache) {
 	<script src="js/flipclock.js"></script>	
 	<style type="text/css">
 		.progress {height: 50px; margin-bottom: 0px; margin-top: 30px; }
+		img { max-width:375px; height: auto; }
 	</style>
 </head>
 <body>
@@ -229,8 +242,7 @@ function GetBlockVersionCounter($blockVer, $memcache) {
 			<h1>Is Segregated Witness Active? <b><?=$segwitActive ? "Yes!" : "No";?></b></h1>
 		</div>
 		<div align="center" style>
-			<img src="../images/logo.png" with="200px", height="150px">&nbsp;
-			<img src="../images/litecoin.png" width="125px" height="125px">
+			<img src="../images/logo.png">
 			<div class="progress">
 				<div class="progress-bar progress-bar-info progress-bar-striped active" role="progressbar" aria-valuenow="<?=$segwitPercentage?>" aria-valuemin="0" aria-valuemax="100" style="width:<?=$segwitPercentage?>%"></div>
 			</div>
@@ -268,6 +280,7 @@ function GetBlockVersionCounter($blockVer, $memcache) {
 			<tr><td><b>Blocks to mine until next retarget</b></td><td align = "right"><?=$nextRetargetBlock-$blockCount;?></td></tr>
 			<tr><td><b>Next block retarget ETA</b></td><td align = "right"><?=GetNextRetargetETA($blockETA);?></td></tr>
 			<tr><td><b>BIP9 miner support since activation period start</b></td><td align = "right"><?=$bip9Blocks . " (" .number_format(($bip9Blocks / $blocksSincePeriodStart * 100 / 1), 2) . "%)"; ?></td></tr>
+			<tr><td><b>CSV miner support since activation period start</b></td><td align = "right"><?=$csvBlocks . " (" .number_format(($csvBlocks / $blocksSincePeriodStart * 100 / 1), 2) . "%)"; ?></td></tr>
 			<tr><td><b>Segwit status </b></td><td align = "right"><?=$segwitStatus;?></td></tr>
 			<tr><td><b>Segwit activation threshold </b></td><td align = "right">75%</td></tr>
 			<tr><td><b>Segwit miner support</b></td><td align = "right"><?=$segwitBlocks . " (" . $segwitPercentage . "%)"; ?></td></tr>
@@ -281,6 +294,8 @@ function GetBlockVersionCounter($blockVer, $memcache) {
 			echo $displayText;
 			?>
 		</h3>
+		<br/>
+		<img src="../images/litecoin.png" width="125px" height="125px">
 	</div>
 	<br/>
 	<footer>
