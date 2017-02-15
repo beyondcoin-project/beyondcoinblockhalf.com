@@ -2,14 +2,15 @@
 include_once("analyticstracking.php");
 require_once 'jsonRPCClient.php';
 
-define("BIP9_TOPBITS_VERSION", 0x20000000);
-define("CSV_SEGWIT_BLOCK_VERSION", 0x20000003);
-define("CSV_BLOCK_VERSION", 0x20000001);
-define("SEGWIT_BLOCK_VERSION", 0x20000002);
-define("BLOCK_SIGNAL_INTERVAL",  8064);
-define("SEGWIT_SIGNAL_START", 1145088);
-define("SEGWIT_PERIOD_START", 142);
-define("BLOCK_RETARGET_INTERVAL", 2016);
+define("BIP9_TOPBITS_BLOCK_VERSION", 0x20000000);
+define("CSV_SEGWIT_BLOCK_VERSION",   0x20000003);
+define("CSV_BLOCK_VERSION",          0x20000001);
+define("SEGWIT_BLOCK_VERSION",       0x20000002);
+define("SEGWIT_SIGNAL_START",        1145088);
+define("SEGWIT_PERIOD_START",        142);
+define("BLOCK_RETARGET_INTERVAL",    2016);
+define("BLOCK_SIGNAL_INTERVAL",      8064);
+define("BLOCKS_PER_DAY",             576);
 
 $litecoin = new jsonRPCClient('http://user:pass@127.0.0.1:9332/');
 $blockCount = $litecoin->getblockcount();
@@ -26,13 +27,12 @@ $pendingSFs = array_merge($pendingSFs, $pendingBIP9SFs);
 $segwitInfo = $blockChainInfo["bip9_softforks"]["segwit"]; 
 $segwitActive = ($segwitInfo["status"] == "active") ? true : false; 
 
-$blocksPerDay = (60 / 2.5) * 24;
 $nextRetargetBlock = GetNextRetarget($blockCount) * BLOCK_RETARGET_INTERVAL;
 $nextSignalPeriodBlock = GetNextSignalPeriod($blockCount) * BLOCK_SIGNAL_INTERVAL;
 $signalPeriodStart = $nextSignalPeriodBlock - BLOCK_SIGNAL_INTERVAL;
 $blocksSincePeriodStart = $blockCount - $signalPeriodStart;
 $activationPeriod = ((int)GetNextSignalPeriod($blockCount) - SEGWIT_PERIOD_START);
-$blockETA = ($nextRetargetBlock - $blockCount) / $blocksPerDay * 24 * 60 * 60;
+$blockETA = ($nextRetargetBlock - $blockCount) / BLOCKS_PER_DAY * 24 * 60 * 60;
 
 $mem = new Memcached();
 $mem->addServer("127.0.0.1", 11211) or die("Unable to connect to Memcached.");
@@ -42,48 +42,60 @@ if ($blocksSincePeriodStart == 0) {
 }
 
 $blockHeight = $mem->get("blockheight");
+$blockHeight576 = $mem->get("blockheight_576");
 $versions = $mem->get("versions");
 
 if (!$versions)
-	$versions = array(BIP9_TOPBITS_VERSION, CSV_SEGWIT_BLOCK_VERSION, SEGWIT_BLOCK_VERSION);
+	$versions = array(BIP9_TOPBITS_VERSION, CSV_BLOCK_VERSION, CSV_SEGWIT_BLOCK_VERSION, SEGWIT_BLOCK_VERSION);
 
 $verbose = false;
 
 if ($blockHeight) {
 	if ($blockHeight != $blockCount) {
 		for ($i = $blockCount; $i > $blockHeight; $i--) {
-			$blockVer = GetBlockVersion($i, $litecoin);
-			if ($verbose)
-				echo 'New block. Height: ' . $i . ' with block version ' . $blockVer . '.<br>';
-
-			if (!in_array($blockVer, $versions)) {
-				array_push($versions, $blockVer);
-			}
-			HandleBlockVer($blockVer, $mem, $verbose);
+			HandleBlockVer($i, $mem, $litecoin, true);
 		}
 		$mem->set("blockheight", $blockCount);
 	} 
 } else {
 	$mem->set('blockheight', $blockCount);
 	for ($i = $blockCount - $blocksSincePeriodStart + 1; $i <= $blockCount; $i++) {
-		$blockVer = GetBlockVersion($i, $litecoin);
-		
-		if (!in_array($blockVer, $versions)) {
-			array_push($versions, $blockVer);
-		}
-		HandleBlockVer($blockVer, $mem, $verbose);
+		HandleBlockVer($i, $mem, $litecoin, false);
 	}
 	$mem->set('versions', $versions);
 }
 
-if ($verbose)
+if ($blockHeight576) {
+	if ($blockHeight576 != $blockCount) {
+		$diff = $blockCount - $blockHeight576;
+		for ($i = $blockCount; $i > $blockHeight576; $i--) {
+			HandleBlockVer($i, $mem, $litecoin, true, true, true);
+		}
+		for ($i = $blockCount - BLOCKS_PER_DAY; $i < ($blockCount - BLOCKS_PER_DAY) + $diff; $i++) {
+			HandleBlockVer($i, $mem, $litecoin, true, false, true);
+		}
+		$mem->set("blockheight_576", $blockCount);
+	} 
+} else {
+	$mem->set('blockheight_576', $blockCount);
+	for ($i = $blockCount - BLOCKS_PER_DAY + 1; $i <= $blockCount; $i++) {
+		HandleBlockVer($i, $mem, $litecoin, false, true, true);
+	}
+	$mem->set('versions', $versions);
+}
+
+if ($verbose) {
+	echo '<b>Activation Period Block Summary</b><br/>';
 	GetBlockRangeSummary($versions, $mem);
+	echo '<br/><b>24 Hour Block Summary</b><br/>';
+	GetBlockRangeSummary($versions, $mem, '_576');
+}
 
-$segwitBlocks = GetBlockVersionCounter(CSV_SEGWIT_BLOCK_VERSION, $mem) + GetBlockVersionCounter(SEGWIT_BLOCK_VERSION, $mem);
-$segwitPercentage = number_format($segwitBlocks / $blocksSincePeriodStart * 100 / 1, 2);
-$bip9Blocks = GetBIP9Support($versions, $mem);
+$segwitBlocks = GetSegwitSupport($versions, $mem);
+$segwitBlocksPerDay = GetSegwitSupport($versions, $mem, '_576');
 $csvBlocks = GetCSVSupport($versions, $mem);
-
+$csvBlocksPerDay = GetCSVSupport($versions, $mem, '_576');
+$segwitPercentage = number_format($segwitBlocksPerDay / BLOCKS_PER_DAY * 100 / 1, 2);
 $segwitSignalling = ($blockCount >= SEGWIT_SIGNAL_START) ? true : false;
 $segwitStatus = $segwitInfo["status"];
 $displayText = "The Segregated Witness (segwit) soft fork will start signalling on block number " . $nextRetargetBlock . ".";
@@ -91,16 +103,33 @@ if ($segwitSignalling) {
 	$displayText = "The Segregated Witness (segwit) soft fork has started signalling! <br/><br/> Ask your pool to support segwit if it isn't already doing so.";
 }
 
-function HandleBlockVer($blockVer, $mem, $verbose) {
+function HandleBlockVer($height, $mem, $rpc, $new, $add=true, $postfix=false) {
+	$verbose = $GLOBALS['verbose'];
+	$blockVer = GetBlockVersion($height, $rpc);
+	if ($postfix)
+		$blockVer .= '_576';
+	
+	if (!in_array($blockVer, $GLOBALS['versions'])) {
+		array_push($GLOBALS['versions'], $blockVer);
+	}
+
+	if ($new && $verbose) {
+		echo 'Processing block. Height: ' . $height . ' with block version ' . $blockVer . '.<br>';
+	}
+
 	$result = $mem->get($blockVer);
 	if (!$result) {
 		if ($verbose)
 			echo 'Creating new blockver: ' . $blockVer . '<br>';
 		$mem->set($blockVer, 1);
 	} else {
-		if ($verbose)
+		if ($add)
+			$result += 1;
+		else
+			$result -= 1;
+		$mem->set($blockVer, $result);
+		if ($verbose) 
 			echo 'Setting block verion: ' . $blockVer . ' count value to: ' . $result . '<br>';
-		$mem->set($blockVer, $result+1);
 	}
 }
 
@@ -135,30 +164,40 @@ function GetNextSignalPeriod($block) {
 	return $iterations;
 }
 
-function GetBIP9Support($versions, $memcache) {
+function GetBIP9Support($versions, $memcache, $postfix='') {
 	$totalBlocks = 0;
 	foreach ($versions as $version) {
-		if ($version >= 536870912) {
-			$totalBlocks += GetBlockVersionCounter($version, $memcache);
+		if ($version >= BIP9_TOPBITS_VERSION) {
+			$totalBlocks += GetBlockVersionCounter($version, $memcache, $postfix);
 		}
 	}
 	return $totalBlocks;
 }
 
-function GetCSVSupport($versions, $memcache) {
+function GetCSVSupport($versions, $memcache, $postfix='') {
 	$totalBlocks = 0;
 	foreach ($versions as $version) {
 		if ($version == CSV_BLOCK_VERSION || $version == CSV_SEGWIT_BLOCK_VERSION) {
-			$totalBlocks += GetBlockVersionCounter($version, $memcache);
+			$totalBlocks += GetBlockVersionCounter($version, $memcache, $postfix);
 		}
 	}
 	return $totalBlocks;
 }
 
-function GetBlockRangeSummary($versions, $memcache) {
+function GetSegwitSupport($versions, $memcache, $postfix='') {
 	$totalBlocks = 0;
 	foreach ($versions as $version) {
-		$counter = GetBlockVersionCounter($version, $memcache);
+		if ($version == SEGWIT_BLOCK_VERSION || $version == CSV_SEGWIT_BLOCK_VERSION) {
+			$totalBlocks += GetBlockVersionCounter($version, $memcache, $postfix);
+		}
+	}
+	return $totalBlocks;
+}
+
+function GetBlockRangeSummary($versions, $memcache, $postfix='') {
+	$totalBlocks = 0;
+	foreach ($versions as $version) {
+		$counter = GetBlockVersionCounter($version, $memcache, $postfix);
 		if ($counter == 0) {
 			continue;
 		}
@@ -211,8 +250,8 @@ function FormatDate($timestamp) {
 	return date('m/d/Y H:i:s', $timestamp);
 }
 
-function GetBlockVersionCounter($blockVer, $memcache) {
-	return $memcache->get($blockVer);
+function GetBlockVersionCounter($blockVer, $memcache, $postfix='') {
+	return $memcache->get($blockVer . $postfix);
 }
 
 ?>
@@ -248,7 +287,8 @@ function GetBlockVersionCounter($blockVer, $memcache) {
 			</div>
 			<b>
 				<?php
-				echo $segwitBlocks . ' out of ' . (BLOCK_SIGNAL_INTERVAL * .75) . ' blocks achieved!';
+				echo $segwitBlocksPerDay . '/' . BLOCKS_PER_DAY . ' (' . $segwitPercentage . '%)' . ' blocks signaling in the past 24 hours!'; 
+				//echo $segwitBlocks . ' blocks signaling! ' . (BLOCK_SIGNAL_INTERVAL * .75) . ' out of '. BLOCK_SIGNAL_INTERVAL . ' (75%) blocks are required to activate.';
 				?>
 			</b>
 		</div>
@@ -279,13 +319,12 @@ function GetBlockVersionCounter($blockVer, $memcache) {
 			<tr><td><b>Next block retarget</b></td><td align = "right"><?=$nextRetargetBlock;?></td></tr>
 			<tr><td><b>Blocks to mine until next retarget</b></td><td align = "right"><?=$nextRetargetBlock-$blockCount;?></td></tr>
 			<tr><td><b>Next block retarget ETA</b></td><td align = "right"><?=GetNextRetargetETA($blockETA);?></td></tr>
-			<tr><td><b>BIP9 miner support since activation period start</b></td><td align = "right"><?=$bip9Blocks . " (" .number_format(($bip9Blocks / $blocksSincePeriodStart * 100 / 1), 2) . "%)"; ?></td></tr>
-			<tr><td><b>CSV miner support since activation period start</b></td><td align = "right"><?=$csvBlocks . " (" .number_format(($csvBlocks / $blocksSincePeriodStart * 100 / 1), 2) . "%)"; ?></td></tr>
 			<tr><td><b>Segwit status </b></td><td align = "right"><?=$segwitStatus;?></td></tr>
 			<tr><td><b>Segwit activation threshold </b></td><td align = "right">75%</td></tr>
-			<tr><td><b>Segwit miner support</b></td><td align = "right"><?=$segwitBlocks . " (" . $segwitPercentage . "%)"; ?></td></tr>
-			<tr><td><b>Segwit start time </b></td><td align = "right"><?=FormatDate($segwitInfo["startTime"]);?></td></tr>
-			<tr><td><b>Segwit timeout time</b></td><td align = "right"><?=FormatDate($segwitInfo["timeout"]);?></td></tr>
+			<tr><td><b>Segwit miner support within the last 24 hours (last 576 blocks)</b></td><td align = "right"><?=$segwitBlocksPerDay . " (" .number_format(($segwitBlocksPerDay / BLOCKS_PER_DAY * 100 / 1), 2) . "%)"; ?></td></tr>
+			<tr><td><b>Segwit miner support (percentage of segwit blocks signaling within the current activation period)</b></td><td align = "right"><?=$segwitBlocks . " (" .number_format(($segwitBlocks / $blocksSincePeriodStart * 100 / 1), 2) . "%)"; ?></td></tr>
+			<tr><td><b>CSV miner support within the last 24 hours (last 576 blocks)</b></td><td align = "right"><?=$csvBlocksPerDay . " (" .number_format(($csvBlocksPerDay / BLOCKS_PER_DAY * 100 / 1), 2) . "%)"; ?></td></tr>
+			<tr><td><b>CSV miner support (percentage of CSV blocks signaling within the current activation period)</b></td><td align = "right"><?=$csvBlocks . " (" .number_format(($csvBlocks / $blocksSincePeriodStart * 100 / 1), 2) . "%)"; ?></td></tr>
 		</table>
 	</div>
 	<div align="center">
