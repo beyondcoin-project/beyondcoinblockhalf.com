@@ -42,6 +42,7 @@ if ($blocksSincePeriodStart == 0) {
 
 $blockHeight = $mem->get("blockheight");
 $blockHeight576 = $mem->get("blockheight_576");
+$blockHeight8064 = $mem->get("blockheight_8064");
 $versions = $mem->get("versions");
 
 if (!$versions)
@@ -57,6 +58,8 @@ if ($_GET['q'] == "json") {
 } else {
 	include_once("analyticstracking.php");
 }
+
+// Clean this mess up..
 
 if ($blockHeight) {
 	if ($blockHeight != $blockCount) {
@@ -77,17 +80,36 @@ if ($blockHeight576) {
 	if ($blockHeight576 != $blockCount) {
 		$diff = $blockCount - $blockHeight576;
 		for ($i = $blockCount; $i > $blockHeight576; $i--) {
-			HandleBlockVer($i, $mem, $litecoin, true, true, true);
+			HandleBlockVer($i, $mem, $litecoin, true, true, '_576');
 		}
 		for ($i = $blockCount - BLOCKS_PER_DAY; $i < ($blockCount - BLOCKS_PER_DAY) + $diff; $i++) {
-			HandleBlockVer($i, $mem, $litecoin, true, false, true);
+			HandleBlockVer($i, $mem, $litecoin, true, false, '_576');
 		}
 		$mem->set("blockheight_576", $blockCount);
 	} 
 } else {
 	$mem->set('blockheight_576', $blockCount);
 	for ($i = $blockCount - BLOCKS_PER_DAY + 1; $i <= $blockCount; $i++) {
-		HandleBlockVer($i, $mem, $litecoin, false, true, true);
+		HandleBlockVer($i, $mem, $litecoin, false, true, '_576');
+	}
+	$mem->set('versions', $versions);
+}
+
+if ($blockHeight8064) {
+	if ($blockHeight8064 != $blockCount) {
+		$diff = $blockCount - $blockHeight8064;
+		for ($i = $blockCount; $i > $blockHeight8064; $i--) {
+			HandleBlockVer($i, $mem, $litecoin, true, true, '_8064');
+		}
+		for ($i = $blockCount - BLOCK_SIGNAL_INTERVAL; $i < ($blockCount - BLOCK_SIGNAL_INTERVAL) + $diff; $i++) {
+			HandleBlockVer($i, $mem, $litecoin, true, false, '_8064');
+		}
+		$mem->set("blockheight_8064", $blockCount);
+	} 
+} else {
+	$mem->set('blockheight_8064', $blockCount);
+	for ($i = $blockCount - BLOCK_SIGNAL_INTERVAL + 1; $i <= $blockCount; $i++) {
+		HandleBlockVer($i, $mem, $litecoin, false, true, '_8064');
 	}
 	$mem->set('versions', $versions);
 }
@@ -97,6 +119,8 @@ if ($verbose) {
 	GetBlockRangeSummary($versions, $mem);
 	echo '<br/><b>24 Hour Block Summary</b><br/>';
 	GetBlockRangeSummary($versions, $mem, '_576');
+	echo '<br/><b>8064 Block Summary</b><br/>';
+	GetBlockRangeSummary($versions, $mem, '_8064');
 }
 
 $segwitBlocks = GetSegwitSupport($versions, $mem);
@@ -114,10 +138,16 @@ if ($segwitSignalling) {
 if ($jsonOutput) {
 	$response = array(
 		"last576" => array(
-			"total" => 576,
-			"fromHeight" => $blockCount-576,
+			"total" => BLOCKS_PER_DAY,
+			"fromHeight" => $blockCount-BLOCKS_PER_DAY,
 			"toHeight" => $blockCount,
 			"stats" => GetBlockRangeStats($versions, BLOCKS_PER_DAY, $mem, '_576')
+			),
+		"last8064" => array(
+			"total" => BLOCK_SIGNAL_INTERVAL,
+			"fromHeight" => $blockCount-BLOCK_SIGNAL_INTERVAL,
+			"toHeight" => $blockCount,
+			"stats" => GetBlockRangeStats($versions, BLOCK_SIGNAL_INTERVAL, $mem, '_8064')
 			),
 		"sincePeriodStart" => array(
 			"total" => $blocksSincePeriodStart,
@@ -130,11 +160,11 @@ if ($jsonOutput) {
 	die();
 }
 
-function HandleBlockVer($height, $mem, $rpc, $new, $add=true, $postfix=false) {
+function HandleBlockVer($height, $mem, $rpc, $new, $add=true, $postfix='') {
 	$verbose = $GLOBALS['verbose'];
 	$blockVer = GetBlockVersion($height, $rpc);
 	if ($postfix)
-		$blockVer .= '_576';
+		$blockVer .= $postfix;
 	
 	if (!in_array($blockVer, $GLOBALS['versions'])) {
 		array_push($GLOBALS['versions'], $blockVer);
