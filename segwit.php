@@ -1,5 +1,4 @@
 <?php
-include_once("analyticstracking.php");
 require_once 'jsonRPCClient.php';
 
 define("BIP9_TOPBITS_BLOCK_VERSION", 0x20000000);
@@ -49,6 +48,15 @@ if (!$versions)
 	$versions = array(BIP9_TOPBITS_VERSION, CSV_BLOCK_VERSION, CSV_SEGWIT_BLOCK_VERSION, SEGWIT_BLOCK_VERSION);
 
 $verbose = false;
+$jsonOutput = false;
+
+if ($_GET['q'] == "json") {
+	header('Content-Type: application/json');
+	$verbose = false;
+	$jsonOutput = true;
+} else {
+	include_once("analyticstracking.php");
+}
 
 if ($blockHeight) {
 	if ($blockHeight != $blockCount) {
@@ -101,6 +109,25 @@ $segwitStatus = $segwitInfo["status"];
 $displayText = "The Segregated Witness (segwit) soft fork will start signalling on block number " . $nextRetargetBlock . ".";
 if ($segwitSignalling) {
 	$displayText = "The Segregated Witness (segwit) soft fork has started signalling! <br/><br/> Ask your pool to support segwit if it isn't already doing so.";
+}
+
+if ($jsonOutput) {
+	$response = array(
+		"last576" => array(
+			"total" => 576,
+			"fromHeight" => $blockCount-576,
+			"toHeight" => $blockCount,
+			"stats" => GetBlockRangeStats($versions, BLOCKS_PER_DAY, $mem, '_576')
+			),
+		"sincePeriodStart" => array(
+			"total" => $blocksSincePeriodStart,
+			"fromHeight" => $signalPeriodStart,
+			"toHeight" => $blockCount,
+			"stats" => GetBlockRangeStats($versions, $blocksSincePeriodStart, $mem)
+			)
+		);
+	echo json_encode($response, JSON_PRETTY_PRINT);
+	die();
 }
 
 function HandleBlockVer($height, $mem, $rpc, $new, $add=true, $postfix=false) {
@@ -205,6 +232,29 @@ function GetBlockRangeSummary($versions, $memcache, $postfix='') {
 		$totalBlocks += $counter;
 	}
 	echo $totalBlocks . ' total blocks. <br>';
+}
+
+function GetBlockRangeStats($versions, $amount, $memcache, $postfix='') {
+	$stats = array();
+	foreach ($versions as $version) {
+		$counter = GetBlockVersionCounter($version, $memcache, $postfix);
+		if ($counter == 0) {
+			continue;
+		}
+		$stats[] = array(
+			"version" => $version,
+			"count" => $counter,
+			"percentage" => $counter / $amount * 100 / 1
+			);
+	}
+
+	$segwitCount = GetSegwitSupport($versions, $memcache, $postfix);
+	$stats[] = array(
+		"proposal" => "SEGWIT",
+		"count" => $segwitCount,
+		"percentage" => $segwitCount / $amount * 100 / 1
+		);
+	return $stats;
 }
 
 function GetBlockVersion($blockNum, $rpc) {
