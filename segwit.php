@@ -36,15 +36,21 @@ $blockETA = ($nextRetargetBlock - $blockCount) / BLOCKS_PER_DAY * 24 * 60 * 60;
 $mem = new Memcached();
 $mem->addServer("127.0.0.1", 11211) or die("Unable to connect to Memcached.");
 
-if ($blocksSincePeriodStart == 0) {
-	$mem->flush();
+$period = $mem->get("period");
+if (!$period) {
+	$mem->set("period", $activationPeriod);
+} else {
+	if ($period != $activationPeriod) {
+		$mem->flush();
+		$mem->set("period", $activationPeriod);
+	}
 }
 
 $blockHeight = $mem->get("blockheight");
 $blockHeight576 = $mem->get("blockheight_576");
 $blockHeight8064 = $mem->get("blockheight_8064");
-$versions = $mem->get("versions");
 
+$versions = $mem->get("versions");
 if (!$versions)
 	$versions = array(BIP9_TOPBITS_VERSION, CSV_BLOCK_VERSION, CSV_SEGWIT_BLOCK_VERSION, SEGWIT_BLOCK_VERSION);
 
@@ -59,60 +65,10 @@ if ($_GET['q'] == "json") {
 	include_once("analyticstracking.php");
 }
 
-// Clean this mess up..
-
-if ($blockHeight) {
-	if ($blockHeight != $blockCount) {
-		for ($i = $blockCount; $i > $blockHeight; $i--) {
-			HandleBlockVer($i, $mem, $litecoin, true);
-		}
-		$mem->set("blockheight", $blockCount);
-	} 
-} else {
-	$mem->set('blockheight', $blockCount);
-	for ($i = $blockCount - $blocksSincePeriodStart + 1; $i <= $blockCount; $i++) {
-		HandleBlockVer($i, $mem, $litecoin, false);
-	}
-	$mem->set('versions', $versions);
-}
-
-if ($blockHeight576) {
-	if ($blockHeight576 != $blockCount) {
-		$diff = $blockCount - $blockHeight576;
-		for ($i = $blockCount; $i > $blockHeight576; $i--) {
-			HandleBlockVer($i, $mem, $litecoin, true, true, '_576');
-		}
-		for ($i = $blockCount - BLOCKS_PER_DAY; $i < ($blockCount - BLOCKS_PER_DAY) + $diff; $i++) {
-			HandleBlockVer($i, $mem, $litecoin, true, false, '_576');
-		}
-		$mem->set("blockheight_576", $blockCount);
-	} 
-} else {
-	$mem->set('blockheight_576', $blockCount);
-	for ($i = $blockCount - BLOCKS_PER_DAY + 1; $i <= $blockCount; $i++) {
-		HandleBlockVer($i, $mem, $litecoin, false, true, '_576');
-	}
-	$mem->set('versions', $versions);
-}
-
-if ($blockHeight8064) {
-	if ($blockHeight8064 != $blockCount) {
-		$diff = $blockCount - $blockHeight8064;
-		for ($i = $blockCount; $i > $blockHeight8064; $i--) {
-			HandleBlockVer($i, $mem, $litecoin, true, true, '_8064');
-		}
-		for ($i = $blockCount - BLOCK_SIGNAL_INTERVAL; $i < ($blockCount - BLOCK_SIGNAL_INTERVAL) + $diff; $i++) {
-			HandleBlockVer($i, $mem, $litecoin, true, false, '_8064');
-		}
-		$mem->set("blockheight_8064", $blockCount);
-	} 
-} else {
-	$mem->set('blockheight_8064', $blockCount);
-	for ($i = $blockCount - BLOCK_SIGNAL_INTERVAL + 1; $i <= $blockCount; $i++) {
-		HandleBlockVer($i, $mem, $litecoin, false, true, '_8064');
-	}
-	$mem->set('versions', $versions);
-}
+CheckBlocks($blockHeight, $blockCount, $mem, $litecoin, $blocksSincePeriodStart);
+CheckBlocks($blockHeight576, $blockCount, $mem, $litecoin, BLOCKS_PER_DAY, '_576');
+CheckBlocks($blockHeight8064, $blockCount, $mem, $litecoin, BLOCK_SIGNAL_INTERVAL, '_8064');
+$mem->set('versions', $versions);
 
 if ($verbose) {
 	echo '<b>Activation Period Block Summary</b><br/>';
@@ -158,6 +114,30 @@ if ($jsonOutput) {
 		);
 	echo json_encode($response, JSON_PRETTY_PRINT);
 	die();
+}
+
+function CheckBlocks($blockHeight, $blockCount, $mem, $rpc, $blockTarget, $postfix='') {
+	$blockHeightStr = "blockheight" . $postfix;
+	if ($blockHeight) {
+		if ($blockHeight != $blockCount) {
+			$diff = $blockCount - $blockHeight;
+			for ($i = $blockCount; $i > $blockHeight; $i--) {
+				HandleBlockVer($i, $mem, $rpc, true, true, $postfix);
+			}
+			if ($postfix != '') {
+				for ($i = $blockCount - $blockTarget; $i < ($blockCount - $blockTarget) + $diff; $i++) {
+					HandleBlockVer($i, $mem, $rpc, true, false, $postfix);
+				}
+			}
+			$mem->set($blockHeightStr, $blockCount);
+		}
+	} 
+	else {
+		$mem->set($blockHeightStr, $blockCount);
+		for ($i = $blockCount - $blockTarget + 1; $i <= $blockCount; $i++) {
+			HandleBlockVer($i, $mem, $rpc, false, true, $postfix);
+		}
+	}
 }
 
 function HandleBlockVer($height, $mem, $rpc, $new, $add=true, $postfix='') {
