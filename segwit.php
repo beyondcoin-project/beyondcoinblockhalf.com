@@ -15,11 +15,11 @@ $litecoin = new jsonRPCClient('http://user:pass@127.0.0.1:9332/');
 $blockCount = $litecoin->getblockcount();
 $blockChainInfo = $litecoin->getblockchaininfo(); 
 
-$activeSFs = GetSoftforks($blockChainInfo["softforks"], 1); 
+$activeSFs = GetSoftforks($blockChainInfo["softforks"], true); 
 $activeBIP9SFs = GetBIP9Softforks($blockChainInfo["bip9_softforks"], "active");
 $activeSFs = array_merge($activeSFs, $activeBIP9SFs);
 
-$pendingSFs = GetSoftforks($blockChainInfo["softforks"], 0); 
+$pendingSFs = GetSoftforks($blockChainInfo["softforks"], false); 
 $pendingBIP9SFs = GetBIP9Softforks($blockChainInfo["bip9_softforks"], "defined|started");
 $pendingSFs = array_merge($pendingSFs, $pendingBIP9SFs);
 
@@ -49,10 +49,9 @@ if (!$period) {
 $blockHeight = $mem->get("blockheight");
 $blockHeight576 = $mem->get("blockheight_576");
 $blockHeight8064 = $mem->get("blockheight_8064");
-
 $versions = $mem->get("versions");
 if (!$versions)
-	$versions = array(BIP9_TOPBITS_VERSION, CSV_BLOCK_VERSION, CSV_SEGWIT_BLOCK_VERSION, SEGWIT_BLOCK_VERSION);
+	$versions = array(BIP9_TOPBITS_BLOCK_VERSION, CSV_BLOCK_VERSION, CSV_SEGWIT_BLOCK_VERSION, SEGWIT_BLOCK_VERSION);
 
 $verbose = false;
 $jsonOutput = false;
@@ -204,7 +203,7 @@ function GetNextSignalPeriod($block) {
 function GetBIP9Support($versions, $memcache, $postfix='') {
 	$totalBlocks = 0;
 	foreach ($versions as $version) {
-		if ($version >= BIP9_TOPBITS_VERSION) {
+		if ($version >= BIP9_TOPBITS_BLOCK_VERSION) {
 			$totalBlocks += GetBlockVersionCounter($version, $memcache, $postfix);
 		}
 	}
@@ -299,7 +298,7 @@ function GetBIP9Softforks($softforks, $active) {
 function GetSoftforks($softforks, $active) {
 	$result = array();
 	foreach ($softforks as $softfork) {
-		if ($softfork["enforce"]["status"] == $active) {
+		if ($softfork["reject"]["status"] == $active) {
 			array_push($result, $softfork["id"]);
 		}	
 	}
