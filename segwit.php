@@ -370,12 +370,13 @@ function GetBlockVersionCounter($blockVer, $memcache, $postfix='') {
 		}
 		?>
 		<table class="table table-striped" style="margin-top: 30px">
-			<tr><td><b>Activation period #<?=$activationPeriod;?> block range <?="(". BLOCK_SIGNAL_INTERVAL . ")"?></b></td><td align = "right"><?=$signalPeriodStart . " - " . $nextSignalPeriodBlock;?></td></tr>
+			<tr><td><b>Activation period #<?=$activationPeriod;?> block range <?="(". BLOCK_SIGNAL_INTERVAL . " blocks)"?></b></td><td align = "right"><?=$signalPeriodStart . " - " . $nextSignalPeriodBlock;?></td></tr>
 			<tr><td><b>Current block height</b></td><td align = "right"><?=$blockCount;?></td></tr>
-			<tr><td><b>Blocks mined since period start</b></td><td align = "right"><?=$blocksSincePeriodStart?></td></tr>
+			<tr><td><b>Blocks mined since period start</b></td><td align = "right"><?=$blocksSincePeriodStart . " (". number_format($blocksSincePeriodStart / BLOCK_SIGNAL_INTERVAL * 100 / 1, 2) . "%)"?></td></tr>
+			<tr><td><b>Blocks left until period end</b></td><td align = "right"><?=BLOCK_SIGNAL_INTERVAL-$blocksSincePeriodStart . " (". number_format((BLOCK_SIGNAL_INTERVAL-$blocksSincePeriodStart) / BLOCK_SIGNAL_INTERVAL * 100 / 1, 2) . "%)"?></td></tr>
 			<tr><td><b>Current activated soft forks</b></td><td align = "right"><?=implode(",", $activeSFs)?></td></tr>
 			<tr><td><b>Current pending soft forks</b></td><td align = "right"><?=implode(",", $pendingSFs)?></td></tr>
-			<tr><td><b>Next block retarget</b></td><td align = "right"><?=$nextRetargetBlock;?></td></tr>
+			<tr><td><b>Next block retarget (4 per activation period)</b></td><td align = "right"><?=$nextRetargetBlock;?></td></tr>
 			<tr><td><b>Blocks to mine until next retarget</b></td><td align = "right"><?=$nextRetargetBlock-$blockCount;?></td></tr>
 			<tr><td><b>Next block retarget ETA</b></td><td align = "right"><?=GetNextRetargetETA($blockETA);?></td></tr>
 			<tr><td><b>Segwit status </b></td><td align = "right"><?=$segwitStatus;?></td></tr>
