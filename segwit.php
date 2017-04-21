@@ -13,18 +13,18 @@ define("BLOCKS_PER_DAY",             576);
 
 $litecoin = new jsonRPCClient('http://user:pass@127.0.0.1:9332/');
 $blockCount = $litecoin->getblockcount();
-$blockChainInfo = $litecoin->getblockchaininfo(); 
+$blockChainInfo = $litecoin->getblockchaininfo();
 
-$activeSFs = GetSoftforks($blockChainInfo["softforks"], true); 
+$activeSFs = GetSoftforks($blockChainInfo["softforks"], true);
 $activeBIP9SFs = GetBIP9Softforks($blockChainInfo["bip9_softforks"], "active");
 $activeSFs = array_merge($activeSFs, $activeBIP9SFs);
 
-$pendingSFs = GetSoftforks($blockChainInfo["softforks"], false); 
+$pendingSFs = GetSoftforks($blockChainInfo["softforks"], false);
 $pendingBIP9SFs = GetBIP9Softforks($blockChainInfo["bip9_softforks"], "defined|started");
 $pendingSFs = array_merge($pendingSFs, $pendingBIP9SFs);
 
-$segwitInfo = $blockChainInfo["bip9_softforks"]["segwit"]; 
-$segwitActive = ($segwitInfo["status"] == "active") ? true : false; 
+$segwitInfo = $blockChainInfo["bip9_softforks"]["segwit"];
+$segwitActive = ($segwitInfo["status"] == "active") ? true : false;
 
 $nextRetargetBlock = GetNextRetarget($blockCount) * BLOCK_RETARGET_INTERVAL;
 $nextSignalPeriodBlock = GetNextSignalPeriod($blockCount) * BLOCK_SIGNAL_INTERVAL;
@@ -82,7 +82,7 @@ $segwitBlocks = GetSegwitSupport($versions, $mem);
 $segwitBlocksPerDay = GetSegwitSupport($versions, $mem, '_576');
 $csvBlocks = GetCSVSupport($versions, $mem);
 $csvBlocksPerDay = GetCSVSupport($versions, $mem, '_576');
-$segwitPercentage = number_format($segwitBlocksPerDay / BLOCKS_PER_DAY * 100 / 1, 2);
+$segwitPercentage = number_format($segwitBlocks / $blocksSincePeriodStart * 100 / 1, 2);
 $segwitSignalling = ($blockCount >= SEGWIT_SIGNAL_START) ? true : false;
 $segwitStatus = $segwitInfo["status"];
 $displayText = "The Segregated Witness (segwit) soft fork will start signalling on block number " . $nextRetargetBlock . ".";
@@ -130,7 +130,7 @@ function CheckBlocks($blockHeight, $blockCount, $mem, $rpc, $blockTarget, $postf
 			}
 			$mem->set($blockHeightStr, $blockCount);
 		}
-	} 
+	}
 	else {
 		$mem->set($blockHeightStr, $blockCount);
 		for ($i = $blockCount - $blockTarget + 1; $i <= $blockCount; $i++) {
@@ -144,7 +144,7 @@ function HandleBlockVer($height, $mem, $rpc, $new, $add=true, $postfix='') {
 	$blockVer = GetBlockVersion($height, $rpc);
 	if ($postfix)
 		$blockVer .= $postfix;
-	
+
 	if (!in_array($blockVer, $GLOBALS['versions'])) {
 		array_push($GLOBALS['versions'], $blockVer);
 	}
@@ -164,7 +164,7 @@ function HandleBlockVer($height, $mem, $rpc, $new, $add=true, $postfix='') {
 		else
 			$result -= 1;
 		$mem->set($blockVer, $result);
-		if ($verbose) 
+		if ($verbose)
 			echo 'Setting block verion: ' . $blockVer . ' count value to: ' . $result . '<br>';
 	}
 }
@@ -284,7 +284,7 @@ function GetBIP9Softforks($softforks, $active) {
 				}
 			}
 		}
-		else 
+		else
 		{
 			if ($softfork["status"] == $active) {
 				array_push($result, $key);
@@ -300,7 +300,7 @@ function GetSoftforks($softforks, $active) {
 	foreach ($softforks as $softfork) {
 		if ($softfork["reject"]["status"] == $active) {
 			array_push($result, $softfork["id"]);
-		}	
+		}
 	}
 	return $result;
 }
@@ -328,7 +328,7 @@ function GetBlockVersionCounter($blockVer, $memcache, $postfix='') {
 	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
 	<link rel="stylesheet" href="css/flipclock.css">
 	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
-	<script src="js/flipclock.js"></script>	
+	<script src="js/flipclock.js"></script>
 	<style type="text/css">
 		.progress {height: 50px; margin-bottom: 0px; margin-top: 30px; }
 		img { max-width:375px; height: auto; }
@@ -346,15 +346,15 @@ function GetBlockVersionCounter($blockVer, $memcache, $postfix='') {
 			</div>
 			<b>
 				<?php
-				echo $segwitBlocksPerDay . '/' . BLOCKS_PER_DAY . ' (' . $segwitPercentage . '%)' . ' blocks signaling in the past 24 hours!'; 
-				//echo $segwitBlocks . ' blocks signaling! ' . (BLOCK_SIGNAL_INTERVAL * .75) . ' out of '. BLOCK_SIGNAL_INTERVAL . ' (75%) blocks are required to activate.';
+				//echo $segwitBlocksPerDay . '/' . BLOCKS_PER_DAY . ' (' . $segwitPercentage . '%)' . ' blocks signaling in the past 24 hours!';
+				echo $segwitBlocks . '/' . $blocksSincePeriodStart. ' ('. $segwitPercentage . '%) blocks signaling! ' . (BLOCK_SIGNAL_INTERVAL * .75) . ' out of '. BLOCK_SIGNAL_INTERVAL . ' (75%) blocks are required to activate.';
 				?>
 			</b>
 		</div>
 		<?php
 		if (!$segwitSignalling)
-		{ 	
-			?> 
+		{
+			?>
 			<div class="flip-counter clock" style="display: flex; align-items: center; justify-content: center;"></div>
 			<script type="text/javascript">
 				var clock;
@@ -366,7 +366,7 @@ function GetBlockVersionCounter($blockVer, $memcache, $postfix='') {
 				});
 			</script>
 			<br/>
-			<?php 
+			<?php
 		}
 		?>
 		<table class="table table-striped" style="margin-top: 30px">
