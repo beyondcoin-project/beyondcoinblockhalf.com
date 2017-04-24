@@ -313,6 +313,21 @@ function GetBlockVersionCounter($blockVer, $memcache, $postfix='') {
 	return $memcache->get($blockVer . $postfix);
 }
 
+function GetSegwitStatus($status)
+{
+    switch ($status) {
+        case "active":
+            return "Yes! :)";
+            break;
+        case "locked_in":
+            return "Almost!";
+            break;
+        default:
+            return "No";
+            break;
+    }
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -337,7 +352,7 @@ function GetBlockVersionCounter($blockVer, $memcache, $postfix='') {
 <body>
 	<div class="container">
 		<div class="page-header" align="center">
-			<h1>Is Segregated Witness Active? <b><?=$segwitActive ? "Yes!" : "No";?></b></h1>
+			<h1>Is Segregated Witness Active? <b><?=GetSegwitStatus($segwitStatus);?></b></h1>
 		</div>
 		<div align="center" style>
 			<img src="../images/logo.png">
@@ -347,7 +362,7 @@ function GetBlockVersionCounter($blockVer, $memcache, $postfix='') {
 			<b>
 				<?php
 				//echo $segwitBlocksPerDay . '/' . BLOCKS_PER_DAY . ' (' . $segwitPercentage . '%)' . ' blocks signaling in the past 24 hours!';
-				echo $segwitBlocks . '/' . $blocksSincePeriodStart. ' ('. $segwitPercentage . '%) blocks signaling! ' . (BLOCK_SIGNAL_INTERVAL * .75) . ' out of '. BLOCK_SIGNAL_INTERVAL . ' (75%) blocks are required to activate.';
+				echo $segwitBlocks . '/' . $blocksSincePeriodStart. ' ('. $segwitPercentage . '%) blocks signaling! ' . (BLOCK_SIGNAL_INTERVAL * .75) . ' out of '. BLOCK_SIGNAL_INTERVAL . ' (75%) blocks are required to reach "locked_in" status.<br/> After another activation period, SegWit will become active.';
 				?>
 			</b>
 		</div>
