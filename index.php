@@ -134,7 +134,7 @@ function CalculateInflationRate($totalCoins, $blockReward, $blocksPerDay) {
 			<tr><td><b>Approximate block generation time:</b></td><td align = "right"><?=$blockTargetSpacing?> minutes</td></tr>
 			<tr><td><b>Approximate blocks generated per day:</b></td><td align = "right"><?=$blocksPerDay;?></td></tr>
 			<tr><td><b>Difficulty:</b></td><td align = "right"><?=number_format($info['difficulty']);?></td></tr>
-			<tr><td><b>Hash rate:</b></td><td align = "right"><?=number_format($litecoin->getnetworkhashps() / 1000 / 1000 / 1000) . 'GH/s';?></td></tr>
+			<tr><td><b>Hash rate:</b></td><td align = "right"><?=number_format($litecoin->getnetworkhashps() / 1000 / 1000 / 1000 / 1000) . 'TH/s';?></td></tr>
 		</table>
 		<div style="text-align:center">
 			<img src="../images/litecoin.png" width="100px"; height="100px">
