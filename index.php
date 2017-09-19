@@ -21,6 +21,7 @@ $coins = CalculateTotalCoins($blockStartingReward, $blocks, $blockHalvingSubsidy
 $blocksRemaining = CalculateRemainingBlocks($blocks, $blockHalvingSubsidy);
 $blocksPerDay = (60 / $blockTargetSpacing) * 24;
 $blockHalvingEstimation = $blocksRemaining / $blocksPerDay * 24 * 60 * 60;
+$blockHalvings = GetHalvings($blocks, $blockHalvingSubsidy);
 $blockString = '+' . $blockHalvingEstimation . ' second';
 $blockReward = CalculateRewardPerBlock($blockStartingReward, $blocks, $blockHalvingSubsidy);
 $coinsRemaining = $blocksRemaining * $blockReward;
@@ -53,7 +54,15 @@ function CalculateRemainingBlocks($blocks, $subsidy) {
 
 function CalculateRewardPerBlock($blockReward, $blocks, $subsidy) {
 	$halvings = GetHalvings($blocks, $subsidy);
-	$blockReward >>= $halvings;
+
+	if ($halvings == 0) {
+		return $blockReward;
+	}
+
+	for ($i = 0; $i < $halvings; $i++) {
+		$blockReward = $blockReward / 2;
+	}
+
 	return $blockReward;
 }
 
@@ -131,6 +140,7 @@ function CalculateInflationRate($totalCoins, $blockReward, $blocksPerDay) {
 			<tr><td><b>Litecoin inflation until next blockhalf event: (USD):</b></td><td align = "right">$<?=number_format($coinsRemaining * $price);?></td></tr>
 			<tr><td><b>Total blocks:</b></td><td align = "right"><?=number_format($blocks);?></td></tr>
 			<tr><td><b>Blocks until mining reward is halved:</b></td><td align = "right"><?=number_format($blocksRemaining);?></td></tr>
+			<tr><td><b>Total number of block reward halvings:</b></td><td align = "right"><?=$blockHalvings;?></td></tr>
 			<tr><td><b>Approximate block generation time:</b></td><td align = "right"><?=$blockTargetSpacing?> minutes</td></tr>
 			<tr><td><b>Approximate blocks generated per day:</b></td><td align = "right"><?=$blocksPerDay;?></td></tr>
 			<tr><td><b>Difficulty:</b></td><td align = "right"><?=number_format($info['difficulty']);?></td></tr>
