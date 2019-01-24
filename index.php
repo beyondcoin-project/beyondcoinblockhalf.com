@@ -96,11 +96,17 @@ function CalculateInflationRate($totalCoins, $blockReward, $blocksPerDay) {
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta name="description" content="Litecoin Block Reward Halving Countdown website">
 	<meta name="author" content="">
-	<link rel="icon" href="favicon.ico">
+	<link rel="apple-touch-icon" sizes="180x180" href="images/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="images/favicon-16x16.png">
+	<link rel="manifest" href="site.webmanifest">
+	<link rel="mask-icon" href="images/safari-pinned-tab.svg" color="#5bbad5">
+	<meta name="msapplication-TileColor" content="#da532c">
+	<meta name="theme-color" content="#ffffff">
 	<title>Litecoin Block Reward Halving Countdown</title>
 	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
 	<link rel="stylesheet" href="css/flipclock.css">
-	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
 	<script src="js/flipclock.js"></script>	
 </head>
 <body>
@@ -147,9 +153,9 @@ function CalculateInflationRate($totalCoins, $blockReward, $blocksPerDay) {
 			<tr><td><b>Hash rate:</b></td><td align = "right"><?=number_format($litecoin->getnetworkhashps() / 1000 / 1000 / 1000 / 1000) . 'TH/s';?></td></tr>
 		</table>
 		<div style="text-align:center">
-			<img src="../images/litecoin.png" width="100px"; height="100px">
+			<img src="images/android-chrome-192x192.png" width="100px"; height="100px">
 			<br/>
-			<h2><a href="http://www.bitcoinblockhalf.com">Bitcoin Block Halving Countdown</a></h2>
+			<h2><a href="https://www.bitcoinblockhalf.com">Bitcoin Block Halving Countdown</a></h2>
 		</div>
 	</div>
 </body>
