@@ -11,6 +11,9 @@ define("BLOCK_RETARGET_INTERVAL",    2016);
 define("BLOCK_SIGNAL_INTERVAL",      8064);
 define("BLOCKS_PER_DAY",             576);
 
+$mem = new Memcached();
+$mem->addServer("127.0.0.1", 11211) or die("Unable to connect to Memcached.");
+
 $litecoin = new jsonRPCClient('http://user:pass@127.0.0.1:9332/');
 $blockCount = $litecoin->getblockcount();
 $blockChainInfo = $litecoin->getblockchaininfo();
@@ -20,7 +23,7 @@ $activeBIP9SFs = GetBIP9Softforks($blockChainInfo["bip9_softforks"], "active");
 $activeSFs = array_merge($activeSFs, $activeBIP9SFs);
 
 $pendingSFs = GetSoftforks($blockChainInfo["softforks"], false);
-$pendingBIP9SFs = GetBIP9Softforks($blockChainInfo["bip9_softforks"], "defined|started");
+$pendingBIP9SFs = GetBIP9Softforks($blockChainInfo["bip9_softforks"], "defined|started|locked_in");
 $pendingSFs = array_merge($pendingSFs, $pendingBIP9SFs);
 
 $segwitInfo = $blockChainInfo["bip9_softforks"]["segwit"];
@@ -31,10 +34,8 @@ $nextSignalPeriodBlock = GetNextSignalPeriod($blockCount) * BLOCK_SIGNAL_INTERVA
 $signalPeriodStart = $nextSignalPeriodBlock - BLOCK_SIGNAL_INTERVAL;
 $blocksSincePeriodStart = $blockCount - $signalPeriodStart;
 $activationPeriod = ((int)GetNextSignalPeriod($blockCount) - SEGWIT_PERIOD_START);
-$blockETA = ($nextRetargetBlock - $blockCount) / BLOCKS_PER_DAY * 24 * 60 * 60;
-
-$mem = new Memcached();
-$mem->addServer("127.0.0.1", 11211) or die("Unable to connect to Memcached.");
+$blockETA = (BLOCK_SIGNAL_INTERVAL - $blocksSincePeriodStart) / BLOCKS_PER_DAY * 24 * 60 * 60;
+$blocksSincePeriodStartPercentage = number_format($blocksSincePeriodStart / BLOCK_SIGNAL_INTERVAL * 100 / 1, 2);
 
 $period = $mem->get("period");
 if (!$period) {
@@ -88,6 +89,9 @@ $segwitStatus = $segwitInfo["status"];
 $displayText = "The Segregated Witness (segwit) soft fork will start signalling on block number " . $nextRetargetBlock . ".";
 if ($segwitSignalling) {
 	$displayText = "The Segregated Witness (segwit) soft fork has started signalling! <br/><br/> Ask your pool to support segwit if it isn't already doing so.";
+}
+if ($segwitStatus == "locked_in" || $segwitStatus == "active") {
+	$displayText = "";
 }
 
 if ($jsonOutput) {
@@ -327,7 +331,6 @@ function GetSegwitStatus($status)
             break;
     }
 }
-
 ?>
 
 <!DOCTYPE html>
@@ -346,7 +349,6 @@ function GetSegwitStatus($status)
 	<script src="js/flipclock.js"></script>
 	<style type="text/css">
 		.progress {height: 50px; margin-bottom: 0px; margin-top: 30px; }
-		img { max-width:375px; height: auto; }
 	</style>
 </head>
 <body>
@@ -355,32 +357,63 @@ function GetSegwitStatus($status)
 			<h1>Is Segregated Witness Active? <b><?=GetSegwitStatus($segwitStatus);?></b></h1>
 		</div>
 		<div align="center" style>
-			<img src="../images/logo.png">
-			<div class="progress">
-				<div class="progress-bar progress-bar-info progress-bar-striped active" role="progressbar" aria-valuenow="<?=$segwitPercentage?>" aria-valuemin="0" aria-valuemax="100" style="width:<?=$segwitPercentage?>%"></div>
-			</div>
-			<b>
+			<img src="../images/logo.png" style="max-width:375px; height: auto;">
+			<br/><br/>
 				<?php
-				//echo $segwitBlocksPerDay . '/' . BLOCKS_PER_DAY . ' (' . $segwitPercentage . '%)' . ' blocks signaling in the past 24 hours!';
-				echo $segwitBlocks . '/' . $blocksSincePeriodStart. ' ('. $segwitPercentage . '%) blocks signaling! ' . (BLOCK_SIGNAL_INTERVAL * .75) . ' out of '. BLOCK_SIGNAL_INTERVAL . ' (75%) blocks are required to reach "locked_in" status.<br/> After another activation period, SegWit will become active.';
+						$text = "";
+						if ($segwitStatus == "locked_in") {
+							$text = 'SegWit for Litecoin has succesfully locked in! A big thank you to the Litecoin/Bitcoin communities, the Litecoin/Bitcoin developers and the miners for making this possible! After activation period 7, SegWit for Litecoin will be active.';
+						} else if ($segwitStatus == "active") {
+							$text = 'SegWit for Litecoin has succesfully activated! A big thank you to the Litecoin/Bitcoin communities, the Litecoin/Bitcoin developers and the miners for making this possible! Arise chickun!';
+						}
+						echo '<b>'. $text . '</b>';
+				 ?>
+			<?php
+			if ($segwitStatus == "locked_in" || $segwitStatus == "started")
+			{
 				?>
-			</b>
+				<div class="progress">
+					<div class="progress-bar progress-bar-info progress-bar-striped active" role="progressbar" aria-valuenow="<?=$blocksSincePeriodStartPercentage?>" aria-valuemin="0" aria-valuemax="100" style="width:<?=$blocksSincePeriodStartPercentage?>%"></div>
+				</div>
+				<b>
+					<?php
+					if ($segwitStatus == "locked_in") {
+						$blocksLeft = BLOCK_SIGNAL_INTERVAL-$blocksSincePeriodStart;
+						echo $blocksSincePeriodStart . '/' . BLOCK_SIGNAL_INTERVAL . ' (' . $blocksSincePeriodStartPercentage . '%) of period mined. ' . $blocksLeft . ' blocks left until SegWit is active.' . "<br/>";
+					} else if ($segwitStatus == "started") {
+						echo $segwitBlocks . '/' . $blocksSincePeriodStart. ' ('. $segwitPercentage . '%) blocks signaling! ' . (BLOCK_SIGNAL_INTERVAL * .75) . ' out of '. BLOCK_SIGNAL_INTERVAL . ' (75%) blocks are required to reach "locked_in" status.<br/> After another activation period, SegWit will become active.';
+						//echo $segwitBlocksPerDay . '/' . BLOCKS_PER_DAY . ' (' . $segwitPercentage . '%)' . ' blocks signaling in the past 24 hours!';
+					}
+				echo '</b>';
+			} else if ($segwitStatus == "active") {
+				?>
+				<br/><br/>
+				<img src="../images/megachickun.jpg" style="margin-top: 10px; width:100%"></img>
+				<?php
+			}
+			?>
 		</div>
 		<?php
-		if (!$segwitSignalling)
+		if (!$segwitSignalling || $segwitStatus == "locked_in")
 		{
 			?>
-			<div class="flip-counter clock" style="display: flex; align-items: center; justify-content: center;"></div>
+			<br/><br/>
+			<div class="flip-counter clock" style="display: flex; align-items: center; justify-content: center; margin:0"></div>
 			<script type="text/javascript">
-				var clock;
-				$(document).ready(function() {
-					clock = $('.clock').FlipClock(<?=$blockETA?>, {
-						clockFace: 'DailyCounter',
-						countdown: true
-					});
+			var clock;
+			$(document).ready(function() {
+				clock = new FlipClock($('.clock'), <?=$blockETA?>, {
+					clockFace: 'DailyCounter',
+					autoStart: true,
+					countdown: true,
+					callbacks: {
+						stop: function() {
+							location.reload()
+						}
+					}
 				});
+			});
 			</script>
-			<br/>
 			<?php
 		}
 		?>
@@ -393,22 +426,17 @@ function GetSegwitStatus($status)
 			<tr><td><b>Current pending soft forks</b></td><td align = "right"><?=implode(",", $pendingSFs)?></td></tr>
 			<tr><td><b>Next block retarget (4 per activation period)</b></td><td align = "right"><?=$nextRetargetBlock;?></td></tr>
 			<tr><td><b>Blocks to mine until next retarget</b></td><td align = "right"><?=$nextRetargetBlock-$blockCount;?></td></tr>
-			<tr><td><b>Next block retarget ETA</b></td><td align = "right"><?=GetNextRetargetETA($blockETA);?></td></tr>
+			<tr><td><b>Next block retarget ETA</b></td><td align = "right"><?=GetNextRetargetETA(($nextRetargetBlock - $blockCount) / BLOCKS_PER_DAY * 24 * 60 * 60);?></td></tr>
 			<tr><td><b>Segwit status </b></td><td align = "right"><?=$segwitStatus;?></td></tr>
 			<tr><td><b>Segwit activation threshold </b></td><td align = "right">75%</td></tr>
-			<tr><td><b>Segwit miner support within the last 24 hours (last 576 blocks)</b></td><td align = "right"><?=$segwitBlocksPerDay . " (" .number_format(($segwitBlocksPerDay / BLOCKS_PER_DAY * 100 / 1), 2) . "%)"; ?></td></tr>
-			<tr><td><b>Segwit miner support (percentage of segwit blocks signaling within the current activation period)</b></td><td align = "right"><?=$segwitBlocks . " (" .number_format(($segwitBlocks / $blocksSincePeriodStart * 100 / 1), 2) . "%)"; ?></td></tr>
-			<tr><td><b>CSV miner support within the last 24 hours (last 576 blocks)</b></td><td align = "right"><?=$csvBlocksPerDay . " (" .number_format(($csvBlocksPerDay / BLOCKS_PER_DAY * 100 / 1), 2) . "%)"; ?></td></tr>
-			<tr><td><b>CSV miner support (percentage of CSV blocks signaling within the current activation period)</b></td><td align = "right"><?=$csvBlocks . " (" .number_format(($csvBlocks / $blocksSincePeriodStart * 100 / 1), 2) . "%)"; ?></td></tr>
 		</table>
 	</div>
 	<div align="center">
-		<h3>
-			<?php
-			echo $displayText;
-			?>
-		</h3>
-		<br/>
+		<?php
+		if ($displayText != "") {
+			echo '<h4><b>' . $displayText . '</b></h4>';
+		}
+		?>
 		<img src="../images/litecoin.png" width="125px" height="125px">
 	</div>
 	<br/>
