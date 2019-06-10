@@ -1,4 +1,5 @@
 <?php
+include_once("analyticstracking.php");
 require_once 'jsonRPCClient.php';
 
 $litecoin = new jsonRPCClient('http://user:pw@127.0.0.1:9332/');
@@ -114,16 +115,16 @@ function CalculateInflationRate($totalCoins, $blockReward, $blocksPerDay) {
 		<div class="page-header" style="text-align:center">
 			<h3>Litecoin Block Reward Halving Countdown</h3>
 		</div>
-		<div class="flip-counter clock" style="display: flex; align-items: center; justify-content: center;"></div>
+		<div class="flip-counter clock" style="display: flex; align-items: center; justify-content: center; margin:0"></div>
 		<script type="text/javascript">
-			var clock;
-
-			$(document).ready(function() {
-				clock = $('.clock').FlipClock(<?=$blockHalvingEstimation?>, {
-					clockFace: 'DailyCounter',
-					countdown: true
-				});
+		var clock;
+		$(document).ready(function() {
+			clock = new FlipClock($('.clock'), <?=$blockHalvingEstimation?>, {
+				clockFace: 'DailyCounter',
+				autoStart: true,
+				countdown: true
 			});
+		});
 		</script>
 		<div style="text-align:center">
 			Reward-Drop ETA date: <strong><?=date('d M Y H:i:s', strtotime($blockString, time()))?></strong><br/><br/>
