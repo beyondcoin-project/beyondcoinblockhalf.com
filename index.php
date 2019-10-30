@@ -132,7 +132,6 @@ function CalculateInflationRate($totalCoins, $blockReward, $blocksPerDay) {
 			<!--<iframe width="560" height="315" align="center" src="https://www.youtube.com/embed/BPxq8CgMooI" frameborder="0" allowfullscreen></iframe>-->
 			<br/><br/>
 		</div>
-		<br />
 		<table class="table table-striped">
 			<tr><td><b>Total Beyondcoins in circulation:</b></td><td align = "right"><?=number_format($coins)?></td></tr>
 			<tr><td><b>Total Beyondcoins to ever be produced:</b></td><td align = "right"><?=number_format($maxCoins)?></td></tr>
