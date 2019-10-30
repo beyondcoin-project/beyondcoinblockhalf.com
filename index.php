@@ -1,5 +1,5 @@
 <?php
-include_once("analyticstracking.php");
+include_once("analyticstracking.html");
 require_once 'jsonRPCClient.php';
 
 $beyondcoin = new jsonRPCClient('http://user:pw@127.0.0.1:10332/');
