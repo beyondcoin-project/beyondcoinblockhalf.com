@@ -107,6 +107,7 @@ function CalculateInflationRate($totalCoins, $blockReward, $blocksPerDay) {
 	<title>Beyondcoin Block Reward Halving Countdown</title>
 	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
 	<link rel="stylesheet" href="css/flipclock.css">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
 	<script src="js/flipclock.js"></script>	
 </head>
@@ -154,10 +155,20 @@ function CalculateInflationRate($totalCoins, $blockReward, $blocksPerDay) {
 			<tr><td><b>Hash rate:</b></td><td align = "right"><?=number_format($beyondcoin->getnetworkhashps() / 1000 / 1000 / 1000) . ' GH/s';?></td></tr>
 		</table>
 		<div style="text-align:center">
-			<img src="images/android-chrome-192x192.png" width="100px"; height="100px">
-			<br/>
-			<h2><a href="https://beyondcoin.io">Beyondcoin,</a> a coin created to go Beyond the impossible.</h2>
-		</div>
+            <img src="images/android-chrome-192x192.png" width="100px"; height="100px">
+                <br/>
+            <h2><a href="https://beyondcoin.io">Beyondcoin,</a> a coin created to go Beyond the impossible.</h2>
+            <span>
+			    <a href="https://github.com/beyondcoin-project"><i class="fa fa-github" style="font-size:48px;color:black;" title="GitHub"></i></a>&nbsp;&nbsp;
+                <a href="https://twitter.com/Beyondcoin_BYND"><i class="fa fa-twitter" style="font-size:48px;color:black;" title="Twitter"></i></a>&nbsp;&nbsp;
+            	<a href="https://instagram.com/beyondcoin"><i class="fa fa-instagram" style="font-size:48px;color:black;" title="Instagram"></i></a>
+            </span>
+            <br />
+            <span>
+                <a href="http://explorer.beyondcoin.io"><i class="fa fa-cubes" style="font-size:24px;color:grey;" title="Beyondcoin Block Explorer"></i></a>&nbsp;&nbsp;
+                <a href="https://beyondcoinpool.com"><i class="fa fa-server" style="font-size:24px;color:grey;" title="beyondcoinpool.com"></i></a>
+            </span>
+        </div>
 	</div>
 </body>
 </html>
