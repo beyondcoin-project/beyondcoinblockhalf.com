@@ -1,5 +1,5 @@
 <?php
-$data = file_get_contents('https://api.coingecko.com/api/v3/coins/beyondcoin/tickers');
+$data = file_get_contents('https://altmarkets.io/api/v2/tickers/byndbtc');
 $price = json_decode($data, true);
 $byndPrice = (float)$price["last"];
 

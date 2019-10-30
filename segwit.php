@@ -14,7 +14,7 @@ define("BLOCKS_PER_DAY",             576);
 $mem = new Memcached();
 $mem->addServer("127.0.0.1", 11211) or die("Unable to connect to Memcached.");
 
-$beyondcoin = new jsonRPCClient('http://user:pass@127.0.0.1:9332/');
+$beyondcoin = new jsonRPCClient('http://user:pass@127.0.0.1:10332/');
 $blockCount = $beyondcoin->getblockcount();
 $blockChainInfo = $beyondcoin->getblockchaininfo();
 
