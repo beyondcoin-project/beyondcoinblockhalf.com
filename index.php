@@ -153,11 +153,11 @@ function CalculateInflationRate($totalCoins, $blockReward, $blocksPerDay) {
 			<tr><td><b>Difficulty:</b></td><td align = "right"><?=number_format($info['difficulty']);?></td></tr>
 			<tr><td><b>Hash rate:</b></td><td align = "right"><?=number_format($beyondcoin->getnetworkhashps() / 1000 / 1000 / 1000) . ' GH/s';?></td></tr>
 		</table>
-		<!--<div style="text-align:center">
+		<div style="text-align:center">
 			<img src="images/android-chrome-192x192.png" width="100px"; height="100px">
 			<br/>
-			<h2><a href="https://www.bitcoinblockhalf.com">Bitcoin Block Halving Countdown</a></h2>
-		</div>-->
+			<h2><a href="https://beyondcoin.io">Beyondcoin,</a> a coin created to go Beyond the impossible.</h2>
+		</div>
 	</div>
 </body>
 </html>
