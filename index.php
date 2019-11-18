@@ -165,7 +165,7 @@ function CalculateInflationRate($totalCoins, $blockReward, $blocksPerDay) {
             </span>
             <br/>
             <span>
-                <a href="http://explorer.beyondcoin.io"><i class="fa fa-cubes" style="position:relative;font-size:24px;color:grey;top:7.5px;" title="Beyondcoin Block Explorer"></i></a>&nbsp;&nbsp;
+                <a href="http://byndexplorer.com"><i class="fa fa-cubes" style="position:relative;font-size:24px;color:grey;top:7.5px;" title="Beyondcoin Block Explorer"></i></a>&nbsp;&nbsp;
                 <a href="https://beyondcoinpool.com"><i class="fa fa-server" style="position:relative;font-size:24px;color:grey;top:7.5px;" title="beyondcoinpool.com"></i></a>
             </span>
 			<br/><br/><br/>
